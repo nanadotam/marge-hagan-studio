@@ -8,18 +8,24 @@ module.exports = async function handler(req, res) {
   if (!slug) return res.status(400).send('<h1>Missing deck slug</h1>');
   if (!SLUG_RE.test(slug)) return res.status(400).send('<h1>Invalid deck slug</h1>');
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return res.status(500).send('<h1>Blob storage not configured</h1>');
-  }
-
   try {
-    // Locate the blob (verifies it exists and gets the canonical public URL)
-    const blob = await head(`decks/${slug}.html`, {
-      token: process.env.BLOB_READ_WRITE_TOKEN,
-    });
+    const pathname = `decks/${slug}.html`;
+    let blobUrl;
+
+    if (process.env.BLOB_STORE_ID) {
+      blobUrl = `https://${process.env.BLOB_STORE_ID}.public.blob.vercel-storage.com/${pathname}`;
+    } else if (process.env.BLOB_READ_WRITE_TOKEN) {
+      // Legacy fallback for older deployments.
+      const blob = await head(pathname, {
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+      blobUrl = blob.url;
+    } else {
+      return res.status(500).send('<h1>Blob storage not configured</h1>');
+    }
 
     // Fetch the HTML from the public blob URL and proxy it
-    const htmlRes = await fetch(blob.url);
+    const htmlRes = await fetch(blobUrl);
     if (!htmlRes.ok) return res.status(404).send('<h1>Deck not found</h1>');
 
     const html = await htmlRes.text();

@@ -85,9 +85,11 @@
         </div>
 
         <div class="slug-row">
-          <span class="slug-url">deck/<span id="slug-val"></span></span>
-          <button class="slug-regen" id="slug-regen" title="New link ID">↻</button>
+          <span class="slug-prefix">deck/</span>
+          <input class="slug-input" id="slug-val" type="text" spellcheck="false" autocomplete="off" placeholder="my-client-name" maxlength="60" />
+          <button class="slug-regen" id="slug-regen" title="Random slug">↻</button>
         </div>
+        <p class="slug-hint" id="slug-hint"></p>
       </section>
 
       <section class="ctrl-section">

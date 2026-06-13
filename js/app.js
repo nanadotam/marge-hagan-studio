@@ -47,18 +47,62 @@ const dateIn    = document.getElementById('date-in');
 const noteIn    = document.getElementById('note-in');
 const slugVal      = document.getElementById('slug-val');
 const slugRegen    = document.getElementById('slug-regen');
+const slugHint     = document.getElementById('slug-hint');
 const publishBtn   = document.getElementById('publish-btn');
 const pubResult    = document.getElementById('pub-result');
 const pubResultUrl = document.getElementById('pub-result-url');
 const pubCopyBtn   = document.getElementById('pub-copy-btn');
 
-// ── Slug regen ────────────────────────────────────────────────────────────────
-slugVal.textContent = slug;
-slugRegen.addEventListener('click', () => {
-  slug = genSlug();
-  slugVal.textContent = slug;
+// ── Slug helpers ──────────────────────────────────────────────────────────────
+function sanitizeSlug(raw) {
+  return raw.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')   // non-alphanum → hyphen
+    .replace(/^-+|-+$/g, '');       // strip leading/trailing hyphens
+}
+
+function setSlug(value) {
+  slug = value;
+  slugVal.value = value;
+  updateSlugHint();
+  if (imageUrls.length) refreshPreview();
+}
+
+function updateSlugHint() {
+  const s = slugVal.value.trim();
+  if (!s) {
+    slugHint.textContent = '';
+    slugHint.className = 'slug-hint';
+    return;
+  }
+  const clean = sanitizeSlug(s);
+  if (clean !== s) {
+    slugHint.textContent = `Will become: deck/${clean}`;
+    slugHint.className = 'slug-hint';
+  } else {
+    slugHint.textContent = `studio-marge.vercel.app/deck/${clean}`;
+    slugHint.className = 'slug-hint';
+  }
+}
+
+// Seed initial random slug
+slugVal.value = slug;
+updateSlugHint();
+
+// User types a custom slug
+slugVal.addEventListener('input', () => {
+  slug = sanitizeSlug(slugVal.value) || slug;
+  updateSlugHint();
   if (imageUrls.length) refreshPreview();
 });
+
+// Commit sanitized value on blur
+slugVal.addEventListener('blur', () => {
+  const clean = sanitizeSlug(slugVal.value);
+  if (clean) setSlug(clean);
+});
+
+// Random regen
+slugRegen.addEventListener('click', () => setSlug(genSlug()));
 
 // ── Live preview on metadata change ──────────────────────────────────────────
 [titleIn, eyebrowIn, clientIn, dateIn, noteIn].forEach(el =>

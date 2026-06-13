@@ -162,8 +162,20 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px; padding: 9px 12px; margin-top: 12px;
 }
-.slug-url { font-size: 10px; color: var(--muted); flex: 1; word-break: break-all; font-weight: 500; }
-.slug-url span { color: var(--mag); font-weight: 700; }
+.slug-prefix { font-size: 11px; color: var(--muted); font-weight: 500; flex-shrink: 0; }
+.slug-input {
+  flex: 1; min-width: 0;
+  background: transparent; border: none; outline: none;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px; font-weight: 700; color: var(--mag);
+  padding: 0; letter-spacing: .01em;
+}
+.slug-input::placeholder { color: var(--placeholder); font-weight: 500; }
+.slug-hint {
+  font-size: 9.5px; color: var(--muted); margin-top: 5px;
+  padding: 0 2px; min-height: 14px; letter-spacing: .01em;
+}
+.slug-hint.error { color: #c0392b; }
 .slug-regen {
   background: transparent; border: 1px solid var(--border-med);
   color: var(--muted); font-size: 14px; cursor: pointer;

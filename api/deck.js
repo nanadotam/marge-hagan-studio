@@ -2,6 +2,10 @@ const { head } = require('@vercel/blob');
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,62}$/;
 
+function normalizeStoreId(value) {
+  return String(value || '').trim().replace(/^store_/, '').toLowerCase();
+}
+
 module.exports = async function handler(req, res) {
   const slug = req.query.slug;
 
@@ -13,7 +17,8 @@ module.exports = async function handler(req, res) {
     let blobUrl;
 
     if (process.env.BLOB_STORE_ID) {
-      blobUrl = `https://${process.env.BLOB_STORE_ID}.public.blob.vercel-storage.com/${pathname}`;
+      const storeId = normalizeStoreId(process.env.BLOB_STORE_ID);
+      blobUrl = `https://${storeId}.public.blob.vercel-storage.com/${pathname}`;
     } else if (process.env.BLOB_READ_WRITE_TOKEN) {
       // Legacy fallback for older deployments.
       const blob = await head(pathname, {

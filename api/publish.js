@@ -1,15 +1,6 @@
-const { issueSignedToken } = require('@vercel/blob');
-const { handleUploadPresigned } = require('@vercel/blob/client');
+const { issueSignedToken, presignUrl } = require('@vercel/blob');
 
 const DECK_PATH_RE = /^decks\/[a-z0-9][a-z0-9-]{0,62}\.html$/;
-
-function getCallbackUrl(req) {
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  if (!host) return undefined;
-
-  const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
-  return `${proto}://${host}/api/publish`;
-}
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -23,9 +14,9 @@ function readBody(req) {
   });
 }
 
-// Handles two things on the same endpoint:
-//  1. Browser asks for a client upload token  → type: blob.generate-client-token
-//  2. Vercel Blob confirms upload completed   → type: blob.upload-completed
+// Returns a ready-to-fetch presigned PUT URL for the requested deck pathname.
+// The browser uploads the deck HTML directly to Blob storage with this URL —
+// no further signing or query-param assembly is needed on the client.
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -33,38 +24,32 @@ module.exports = async function handler(req, res) {
   try { body = await readBody(req); }
   catch (e) { return res.status(400).json({ error: e.message }); }
 
-  try {
-    const response = await handleUploadPresigned({
-      body,
-      request: req,
-      getSignedToken: async (pathname) => {
-        if (!DECK_PATH_RE.test(pathname)) {
-          throw new Error('Invalid deck pathname');
-        }
+  const pathname = body?.pathname;
+  if (!pathname || !DECK_PATH_RE.test(pathname)) {
+    return res.status(400).json({ error: 'Invalid deck pathname' });
+  }
 
-        return {
-          token: await issueSignedToken({
-            pathname,
-            operations: ['put'],
-            allowedContentTypes: ['text/html'],
-            maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — no deck will exceed this
-            validUntil: Date.now() + 60 * 60 * 1000,
-          }),
-          urlOptions: {
-            allowedContentTypes: ['text/html'],
-            maximumSizeInBytes: 200 * 1024 * 1024,
-            addRandomSuffix: false,
-            allowOverwrite: true,
-            cacheControlMaxAge: 300,
-            callbackUrl: getCallbackUrl(req),
-          },
-        };
-      },
-      onUploadCompleted: async ({ blob }) => {
-        console.log('Deck live:', blob.url);
-      },
+  try {
+    const token = await issueSignedToken({
+      pathname,
+      operations: ['put'],
+      allowedContentTypes: ['text/html'],
+      maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — no deck will exceed this
+      validUntil: Date.now() + 60 * 60 * 1000,
     });
-    return res.json(response);
+
+    const { presignedUrl } = await presignUrl(token, {
+      operation: 'put',
+      pathname,
+      access: 'public',
+      allowedContentTypes: ['text/html'],
+      maximumSizeInBytes: 200 * 1024 * 1024,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      cacheControlMaxAge: 300,
+    });
+
+    return res.json({ presignedUrl });
   } catch (err) {
     console.error('publish error:', err);
     return res.status(400).json({ error: err.message });

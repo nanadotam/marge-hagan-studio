@@ -2,6 +2,7 @@
 
 const PDFJS_CDN    = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const BLOB_API_URL = 'https://vercel.com/api/blob';
 
 let imageUrls = [];
 
@@ -282,6 +283,30 @@ function setPublishBtn(label, loading = false) {
   publishBtn.classList.toggle('loading', loading);
 }
 
+function buildPresignedUploadUrl(pathname, presignedUrlPayload) {
+  const params = new URLSearchParams({ pathname });
+  const url = new URL(`${BLOB_API_URL}/?${params.toString()}`);
+  Object.entries(presignedUrlPayload.params || {}).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  url.searchParams.set('vercel-blob-delegation', presignedUrlPayload.delegationToken);
+  url.searchParams.set('vercel-blob-signature', presignedUrlPayload.signature);
+  return url.toString();
+}
+
+function getStoreIdFromDelegationToken(delegationToken) {
+  const dot = delegationToken.indexOf('.');
+  if (dot < 0) throw new Error('Invalid delegation token');
+  const payloadSeg = delegationToken.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/');
+  const padding = (4 - (payloadSeg.length % 4)) % 4;
+  const json = atob(payloadSeg + '='.repeat(padding));
+  const payload = JSON.parse(json);
+  if (!payload.storeId || typeof payload.storeId !== 'string') {
+    throw new Error('Invalid delegation token');
+  }
+  return payload.storeId;
+}
+
 publishBtn.addEventListener('click', async () => {
   if (!imageUrls.length) return;
   const cleanSlug = sanitizeSlug(slugVal.value);
@@ -305,25 +330,37 @@ publishBtn.addEventListener('click', async () => {
   try {
     const pathname = `decks/${cleanSlug}.html`;
 
-    // Step 1 — ask our server for a ready-to-use presigned PUT URL
+    // Step 1 — get a short-lived presigned upload URL from our server (tiny request, no body limit issue)
     const tokenRes = await fetch('/api/publish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pathname }),
+      body: JSON.stringify({
+        type: 'blob.generate-presigned-url',
+        payload: { pathname, multipart: false, clientPayload: '' },
+      }),
     });
 
     if (!tokenRes.ok) {
       const err = await tokenRes.json().catch(() => ({}));
       throw new Error(err.error || `Token error ${tokenRes.status}`);
     }
-    const { presignedUrl } = await tokenRes.json();
-    if (!presignedUrl) throw new Error('Missing upload URL');
+    const { presignedUrlPayload } = await tokenRes.json();
+    if (!presignedUrlPayload) throw new Error('Missing upload URL');
 
     // Step 2 — upload HTML directly from the browser to Vercel Blob (bypasses 4.5 MB function limit entirely)
     setPublishBtn('Uploading…', true);
-    const uploadRes = await fetch(presignedUrl, {
+    const storeId = getStoreIdFromDelegationToken(presignedUrlPayload.delegationToken);
+    const requestId = `${storeId}:${Date.now()}:${Math.random().toString(16).slice(2)}`;
+    const uploadRes = await fetch(buildPresignedUploadUrl(pathname, presignedUrlPayload), {
       method: 'PUT',
-      headers: { 'Content-Type': 'text/html' },
+      headers: {
+        'x-api-blob-request-id': requestId,
+        'x-api-version': '12',
+        'x-content-type': 'text/html',
+        'x-vercel-blob-access': 'public',
+        'x-vercel-blob-store-id': storeId,
+        'x-vercel-blob-source': 'browser-upload',
+      },
       body: html,
     });
 

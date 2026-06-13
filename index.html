@@ -93,29 +93,33 @@
       <section class="ctrl-section">
         <span class="sec-label">Export</span>
 
+        <!-- Publish live -->
+        <button class="publish-btn" id="publish-btn" disabled>
+          <svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,109.66l-48,48a8,8,0,0,1-11.32-11.32L204.69,112H128a88.1,88.1,0,0,0-88,88,8,8,0,0,1-16,0A104.11,104.11,0,0,1,128,96h76.69L170.34,62.34A8,8,0,0,1,181.66,51l48,48A8,8,0,0,1,229.66,109.66Z"/></svg>
+          Publish Live
+        </button>
+
+        <!-- Publish result -->
+        <div class="pub-result" id="pub-result" style="display:none">
+          <span class="pub-result-label">Live at</span>
+          <a class="pub-result-url" id="pub-result-url" href="#" target="_blank" rel="noopener"></a>
+          <button class="pub-copy-btn" id="pub-copy-btn" title="Copy link">
+            <svg width="12" height="12" viewBox="0 0 256 256" fill="currentColor"><path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4L72.5,104.28A56,56,0,0,1,149.31,102a8,8,0,1,1-10.64,12,40,40,0,0,0-54.85,1.63L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.18,140.4A40,40,0,0,1,117.33,142,8,8,0,1,0,106.69,154a56,56,0,0,0,76.81-2.26l24.12-24.12A56.08,56.08,0,0,0,207.62,48.38Z"/></svg>
+          </button>
+        </div>
+
+        <!-- Divider -->
+        <div class="export-divider"><span>or</span></div>
+
+        <!-- Download fallback -->
         <button class="export-btn" id="export-btn" disabled>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
           Download HTML
         </button>
-
-        <div class="steps">
-          <div class="step">
-            <span class="step-n">1</span>
-            <span>Upload your deck (PDF or image) and fill in details above.</span>
-          </div>
-          <div class="step">
-            <span class="step-n">2</span>
-            <span>Click <strong>Download HTML</strong> to save the standalone file.</span>
-          </div>
-          <div class="step">
-            <span class="step-n">3</span>
-            <span>Drag the file to <a href="https://vercel.com/new" target="_blank" rel="noopener">vercel.com/new</a> — live shareable link in seconds.</span>
-          </div>
-        </div>
       </section>
 
     </aside>

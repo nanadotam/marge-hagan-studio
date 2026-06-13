@@ -45,8 +45,12 @@ const eyebrowIn = document.getElementById('eyebrow-in');
 const clientIn  = document.getElementById('client-in');
 const dateIn    = document.getElementById('date-in');
 const noteIn    = document.getElementById('note-in');
-const slugVal   = document.getElementById('slug-val');
-const slugRegen = document.getElementById('slug-regen');
+const slugVal      = document.getElementById('slug-val');
+const slugRegen    = document.getElementById('slug-regen');
+const publishBtn   = document.getElementById('publish-btn');
+const pubResult    = document.getElementById('pub-result');
+const pubResultUrl = document.getElementById('pub-result-url');
+const pubCopyBtn   = document.getElementById('pub-copy-btn');
 
 // ── Slug regen ────────────────────────────────────────────────────────────────
 slugVal.textContent = slug;
@@ -78,14 +82,14 @@ function showError(msg) {
   fname.textContent = msg;
   dropZone.classList.remove('has-file');
   pdfProg.classList.remove('on');
-  exportBtn.disabled = true;
+  exportBtn.disabled = true; publishBtn.disabled = true;
 }
 
 async function handleFile(file) {
   fname.textContent = file.name;
   dropZone.classList.add('has-file');
   imageUrls = [];
-  exportBtn.disabled = true;
+  exportBtn.disabled = true; publishBtn.disabled = true;
 
   try {
     if (file.type === 'application/pdf') {
@@ -98,7 +102,7 @@ async function handleFile(file) {
       progFill.style.width = '100%';
       pdfProg.classList.remove('on');
       refreshPreview();
-      exportBtn.disabled = false;
+      exportBtn.disabled = false; publishBtn.disabled = false;
     } else {
       showError('Unsupported format — use PNG, JPG, or PDF');
     }
@@ -212,6 +216,50 @@ exportBtn.addEventListener('click', () => {
 
   toast.classList.add('on');
   setTimeout(() => toast.classList.remove('on'), 5000);
+});
+
+// ── Publish Live ──────────────────────────────────────────────────────────────
+publishBtn.addEventListener('click', async () => {
+  if (!imageUrls.length) return;
+
+  const html = buildViewer(
+    imageUrls,
+    titleIn.value, eyebrowIn.value, slug,
+    clientIn.value, dateIn.value, eyebrowIn.value, noteIn.value,
+    logoB64, logoLightB64, headshotB64, fontBoldonse
+  );
+
+  publishBtn.classList.add('loading');
+  publishBtn.textContent = 'Publishing…';
+  pubResult.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ html, slug, title: titleIn.value }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Publish failed');
+
+    pubResultUrl.href        = data.url;
+    pubResultUrl.textContent = data.url.replace(/^https?:\/\//, '');
+    pubResult.style.display  = 'flex';
+
+    pubCopyBtn.onclick = () => {
+      navigator.clipboard.writeText(data.url).then(() => {
+        pubCopyBtn.style.background = '#D4F3E3';
+        setTimeout(() => { pubCopyBtn.style.background = ''; }, 1200);
+      });
+    };
+  } catch (err) {
+    alert('Could not publish: ' + err.message);
+  } finally {
+    publishBtn.classList.remove('loading');
+    publishBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,109.66l-48,48a8,8,0,0,1-11.32-11.32L204.69,112H128a88.1,88.1,0,0,0-88,88,8,8,0,0,1-16,0A104.11,104.11,0,0,1,128,96h76.69L170.34,62.34A8,8,0,0,1,181.66,51l48,48A8,8,0,0,1,229.66,109.66Z"/></svg> Publish Live`;
+  }
 });
 
 // ── Init ──────────────────────────────────────────────────────────────────────

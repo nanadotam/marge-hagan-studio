@@ -1,0 +1,24 @@
+{
+  "name": "marge-hagan-studio",
+  "version": "1.0.0",
+  "description": "Lady-Marge Studio — Client Deck Builder",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nanadotam/marge-hagan-studio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nanadotam/marge-hagan-studio/issues"
+  },
+  "homepage": "https://github.com/nanadotam/marge-hagan-studio#readme",
+  "dependencies": {
+    "@vercel/blob": "^2.4.0"
+  }
+}

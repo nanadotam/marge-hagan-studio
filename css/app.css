@@ -171,10 +171,10 @@ body {
 }
 .slug-regen:hover { border-color: var(--mag); color: var(--mag); }
 
-/* ── EXPORT ──────────────────────────────────────── */
-.export-btn {
+/* ── PUBLISH LIVE ────────────────────────────────── */
+.publish-btn {
   width: 100%;
-  background: var(--mag);
+  background: var(--ink);
   border: none; border-radius: 10px;
   padding: 14px 18px;
   font-family: 'Montserrat', sans-serif;
@@ -182,17 +182,71 @@ body {
   cursor: pointer;
   transition: background .2s, transform .1s, box-shadow .2s;
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   letter-spacing: .03em;
-  box-shadow: 0 4px 16px rgba(167,31,90,0.22);
+  box-shadow: 0 4px 16px rgba(26,10,18,0.16);
 }
-.export-btn:hover:not(:disabled) {
-  background: var(--mag-dark);
-  box-shadow: 0 6px 20px rgba(167,31,90,0.32);
+.publish-btn:hover:not(:disabled) {
+  background: #2d1020;
+  box-shadow: 0 6px 20px rgba(26,10,18,0.24);
   transform: translateY(-1px);
 }
+.publish-btn:active:not(:disabled) { transform: scale(.99); }
+.publish-btn:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+.publish-btn.loading { opacity: .7; pointer-events: none; }
+
+.pub-result {
+  display: flex; align-items: center; gap: 8px;
+  background: #F0FAF4;
+  border: 1px solid #B6E8CC;
+  border-radius: 8px; padding: 10px 13px;
+  margin-bottom: 10px;
+}
+.pub-result-label {
+  font-size: 9px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: #2D7A50; flex-shrink: 0;
+}
+.pub-result-url {
+  font-size: 10.5px; font-weight: 600; color: #1a5c38;
+  text-decoration: none; flex: 1; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.pub-result-url:hover { text-decoration: underline; }
+.pub-copy-btn {
+  background: transparent; border: 1px solid #B6E8CC;
+  color: #2D7A50; border-radius: 6px; padding: 4px 7px;
+  cursor: pointer; display: flex; align-items: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.pub-copy-btn:hover { background: #D4F3E3; border-color: #2D7A50; }
+
+.export-divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 10px 0; color: var(--placeholder); font-size: 10px;
+}
+.export-divider::before, .export-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* ── EXPORT ──────────────────────────────────────── */
+.export-btn {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-med); border-radius: 10px;
+  padding: 11px 18px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  cursor: pointer;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 16px;
+  letter-spacing: .03em;
+}
+.export-btn:hover:not(:disabled) {
+  border-color: var(--mag); color: var(--mag); background: var(--mag-pale);
+}
 .export-btn:active:not(:disabled) { transform: scale(.99); }
-.export-btn:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+.export-btn:disabled { opacity: .35; cursor: not-allowed; }
 
 .steps {
   background: var(--mag-pale);

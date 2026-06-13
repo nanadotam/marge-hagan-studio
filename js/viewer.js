@@ -141,7 +141,7 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
     .f-bottom{position:relative;min-height:640px;overflow:hidden;border-top:1px solid rgba(255,255,255,0.1);}
     .f-content{position:relative;z-index:2;padding:56px 28px 56px;max-width:52%;min-width:300px;}
     @media(max-width:700px){.f-content{max-width:100%;}}
-    .f-big-head{font-size:clamp(38px,6vw,70px);line-height:1.0;color:#F5D7D7;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:20px;font-family:${fontBoldonse ? "'Boldonse'" : '"Montserrat"'},sans-serif;font-weight:${fontBoldonse ? 'normal' : '900'};}
+    .f-big-head{font-size:clamp(38px,6vw,70px);line-height:1.18;color:#F5D7D7;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:20px;font-family:${fontBoldonse ? "'Boldonse'" : '"Montserrat"'},sans-serif;font-weight:${fontBoldonse ? 'normal' : '900'};}
     .f-big-head em{color:#fff;font-style:normal;}
     .f-subtitle{font-size:14px;color:rgba(245,215,215,.82);font-weight:500;line-height:1.6;max-width:380px;margin-bottom:32px;font-family:"Montserrat",sans-serif;}
     .f-links{display:flex;flex-direction:column;gap:11px;border-left:3px solid rgba(245,215,215,.25);padding-left:18px;margin-bottom:36px;}

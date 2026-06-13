@@ -1,36 +1,44 @@
-const { put } = require('@vercel/blob');
+const { handleUpload } = require('@vercel/blob');
 
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk.toString(); });
+    req.on('end', () => {
+      try { resolve(JSON.parse(data)); }
+      catch (e) { reject(new Error('Invalid JSON body')); }
+    });
+    req.on('error', reject);
+  });
+}
+
+// Handles two things on the same endpoint:
+//  1. Browser asks for a client upload token  → type: blob.generate-client-token
+//  2. Vercel Blob confirms upload completed   → type: blob.upload-completed
 module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).end();
 
-  const { html, slug, title } = req.body || {};
-
-  if (!html || !slug) {
-    return res.status(400).json({ error: 'Missing html or slug' });
-  }
-
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return res.status(500).json({ error: 'Blob storage not configured. Add BLOB_READ_WRITE_TOKEN in Vercel dashboard.' });
-  }
+  let body;
+  try { body = await readBody(req); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
 
   try {
-    // Upload the viewer HTML to Vercel Blob, keyed by slug (overwrites on republish)
-    await put(`decks/${slug}.html`, html, {
-      access: 'public',
-      contentType: 'text/html; charset=utf-8',
-      addRandomSuffix: false,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+    const response = await handleUpload({
+      body,
+      request: req,
+      onBeforeGenerateToken: async (pathname) => ({
+        allowedContentTypes: ['text/html'],
+        maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — no deck will exceed this
+        addRandomSuffix: false,
+        cacheControlMaxAge: 300,
+      }),
+      onUploadCompleted: async ({ blob }) => {
+        console.log('Deck live:', blob.url);
+      },
     });
-
-    const deckPath = `/deck/${slug}`;
-    const origin   = req.headers.origin || 'https://studio-marge.vercel.app';
-    const deckUrl  = `${origin}${deckPath}`;
-
-    return res.status(200).json({ url: deckUrl, slug, title });
+    return res.json(response);
   } catch (err) {
     console.error('publish error:', err);
-    return res.status(500).json({ error: err.message || 'Failed to publish deck' });
+    return res.status(400).json({ error: err.message });
   }
 };

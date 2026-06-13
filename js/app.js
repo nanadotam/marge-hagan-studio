@@ -263,6 +263,13 @@ exportBtn.addEventListener('click', () => {
 });
 
 // ── Publish Live ──────────────────────────────────────────────────────────────
+const PUBLISH_ICON = `<svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,109.66l-48,48a8,8,0,0,1-11.32-11.32L204.69,112H128a88.1,88.1,0,0,0-88,88,8,8,0,0,1-16,0A104.11,104.11,0,0,1,128,96h76.69L170.34,62.34A8,8,0,0,1,181.66,51l48,48A8,8,0,0,1,229.66,109.66Z"/></svg>`;
+
+function setPublishBtn(label, loading = false) {
+  publishBtn.innerHTML = PUBLISH_ICON + ' ' + label;
+  publishBtn.classList.toggle('loading', loading);
+}
+
 publishBtn.addEventListener('click', async () => {
   if (!imageUrls.length) return;
 
@@ -273,27 +280,54 @@ publishBtn.addEventListener('click', async () => {
     logoB64, logoLightB64, headshotB64, fontBoldonse
   );
 
-  publishBtn.classList.add('loading');
-  publishBtn.textContent = 'Publishing…';
+  setPublishBtn('Requesting token…', true);
   pubResult.style.display = 'none';
 
   try {
-    const res = await fetch('/api/publish', {
+    const pathname    = `decks/${slug}.html`;
+    const callbackUrl = `${window.location.origin}/api/publish`;
+
+    // Step 1 — get a short-lived client upload token from our server (tiny request, no body limit issue)
+    const tokenRes = await fetch('/api/publish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html, slug, title: titleIn.value }),
+      body: JSON.stringify({
+        type: 'blob.generate-client-token',
+        payload: { pathname, callbackUrl, multipart: false, clientPayload: '' },
+      }),
     });
 
-    const data = await res.json();
+    if (!tokenRes.ok) {
+      const err = await tokenRes.json().catch(() => ({}));
+      throw new Error(err.error || `Token error ${tokenRes.status}`);
+    }
+    const { clientToken } = await tokenRes.json();
 
-    if (!res.ok) throw new Error(data.error || 'Publish failed');
+    // Step 2 — upload HTML directly from the browser to Vercel Blob (bypasses 4.5 MB function limit entirely)
+    setPublishBtn('Uploading…', true);
+    const uploadRes = await fetch(`https://blob.vercel-storage.com/${pathname}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${clientToken}`,
+        'Content-Type': 'text/html; charset=utf-8',
+        'x-vercel-blob-source': 'browser-upload',
+      },
+      body: html,
+    });
 
-    pubResultUrl.href        = data.url;
-    pubResultUrl.textContent = data.url.replace(/^https?:\/\//, '');
+    if (!uploadRes.ok) {
+      const txt = await uploadRes.text().catch(() => uploadRes.statusText);
+      throw new Error(`Upload failed (${uploadRes.status}): ${txt.slice(0, 200)}`);
+    }
+
+    const deckUrl = `${window.location.origin}/deck/${slug}`;
+
+    pubResultUrl.href        = deckUrl;
+    pubResultUrl.textContent = deckUrl.replace(/^https?:\/\//, '');
     pubResult.style.display  = 'flex';
 
     pubCopyBtn.onclick = () => {
-      navigator.clipboard.writeText(data.url).then(() => {
+      navigator.clipboard.writeText(deckUrl).then(() => {
         pubCopyBtn.style.background = '#D4F3E3';
         setTimeout(() => { pubCopyBtn.style.background = ''; }, 1200);
       });
@@ -301,8 +335,7 @@ publishBtn.addEventListener('click', async () => {
   } catch (err) {
     alert('Could not publish: ' + err.message);
   } finally {
-    publishBtn.classList.remove('loading');
-    publishBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor"><path d="M229.66,109.66l-48,48a8,8,0,0,1-11.32-11.32L204.69,112H128a88.1,88.1,0,0,0-88,88,8,8,0,0,1-16,0A104.11,104.11,0,0,1,128,96h76.69L170.34,62.34A8,8,0,0,1,181.66,51l48,48A8,8,0,0,1,229.66,109.66Z"/></svg> Publish Live`;
+    setPublishBtn('Publish Live', false);
   }
 });
 

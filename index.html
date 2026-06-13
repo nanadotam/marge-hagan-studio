@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lady-Marge Studio — Deck Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-brand">
+      <img class="brand-logo" src="assets/logo.png" alt="Lady-Marge" />
+      <span class="brand-div"></span>
+      <span class="brand-lbl">Studio</span>
+    </div>
+    <span class="studio-tag">Deck Builder</span>
+  </header>
+
+  <div class="studio">
+
+    <!-- ── LEFT: Controls ── -->
+    <aside class="controls">
+
+      <section class="ctrl-section">
+        <span class="sec-label">Upload</span>
+
+        <div class="drop-zone" id="drop-zone">
+          <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <p class="dz-title">Drop your file here</p>
+          <p class="dz-sub">or click to browse</p>
+          <div class="fmt-row">
+            <span class="fmt">PDF</span>
+            <span class="fmt">PNG</span>
+            <span class="fmt">JPG</span>
+          </div>
+          <p class="dz-fname" id="fname"></p>
+        </div>
+
+        <div class="pdf-prog" id="pdf-prog">
+          <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+          <span class="prog-txt" id="prog-txt"></span>
+        </div>
+      </section>
+
+      <section class="ctrl-section">
+        <span class="sec-label">Deck Details</span>
+
+        <div class="field">
+          <label class="f-label" for="title-in">Deck title</label>
+          <input class="s-input" id="title-in" type="text" placeholder="Brand Identity System" />
+        </div>
+
+        <div class="field">
+          <label class="f-label" for="eyebrow-in">Eyebrow / category</label>
+          <input class="s-input" id="eyebrow-in" type="text" placeholder="Creative Strategy · 2025" />
+        </div>
+
+        <div class="field">
+          <label class="f-label" for="client-in">Client name</label>
+          <input class="s-input" id="client-in" type="text" placeholder="Acme Corp" />
+        </div>
+
+        <div class="field">
+          <label class="f-label" for="date-in">Date</label>
+          <input class="s-input" id="date-in" type="text" placeholder="June 2025" />
+        </div>
+
+        <div class="field">
+          <label class="f-label" for="note-in">Note (optional)</label>
+          <input class="s-input" id="note-in" type="text" placeholder="Confidential — for review only" />
+        </div>
+
+        <div class="slug-row">
+          <span class="slug-url">deck/<span id="slug-val"></span></span>
+          <button class="slug-regen" id="slug-regen" title="New link ID">↻</button>
+        </div>
+      </section>
+
+      <section class="ctrl-section">
+        <span class="sec-label">Export</span>
+
+        <button class="export-btn" id="export-btn" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download HTML
+        </button>
+
+        <div class="steps">
+          <div class="step">
+            <span class="step-n">1</span>
+            <span>Upload your deck (PDF or image) and fill in details above.</span>
+          </div>
+          <div class="step">
+            <span class="step-n">2</span>
+            <span>Click <strong>Download HTML</strong> to save the standalone file.</span>
+          </div>
+          <div class="step">
+            <span class="step-n">3</span>
+            <span>Drag the file to <a href="https://vercel.com/new" target="_blank" rel="noopener">vercel.com/new</a> — live shareable link in seconds.</span>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- ── RIGHT: Preview ── -->
+    <section class="preview-panel">
+      <div class="prev-bar">
+        <span class="prev-label">Live Preview</span>
+        <span class="prev-hint" id="prev-hint">upload a file to preview</span>
+      </div>
+      <div class="prev-wrap">
+        <iframe id="prev-frame" title="Client preview" sandbox="allow-scripts allow-same-origin"></iframe>
+        <div class="prev-empty" id="prev-empty">
+          <div class="prev-m">
+            <img src="assets/logo.png" alt="" />
+          </div>
+          <p>No file uploaded yet</p>
+          <span class="prev-empty-sub">Drag a PDF or image into the panel on the left</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast">
+    <strong>Downloaded!</strong>
+    <p>Drag the HTML file to <strong>vercel.com/new</strong> for a live link.</p>
+  </div>
+
+  <input type="file" id="file-input" accept="image/*,application/pdf" style="display:none" />
+
+  <script src="js/assets.js"></script>
+  <script src="js/viewer.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

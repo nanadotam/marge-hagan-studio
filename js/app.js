@@ -294,6 +294,19 @@ function buildPresignedUploadUrl(pathname, presignedUrlPayload) {
   return url.toString();
 }
 
+function getStoreIdFromDelegationToken(delegationToken) {
+  const dot = delegationToken.indexOf('.');
+  if (dot < 0) throw new Error('Invalid delegation token');
+  const payloadSeg = delegationToken.slice(0, dot).replace(/-/g, '+').replace(/_/g, '/');
+  const padding = (4 - (payloadSeg.length % 4)) % 4;
+  const json = atob(payloadSeg + '='.repeat(padding));
+  const payload = JSON.parse(json);
+  if (!payload.storeId || typeof payload.storeId !== 'string') {
+    throw new Error('Invalid delegation token');
+  }
+  return payload.storeId;
+}
+
 publishBtn.addEventListener('click', async () => {
   if (!imageUrls.length) return;
   const cleanSlug = sanitizeSlug(slugVal.value);
@@ -336,12 +349,16 @@ publishBtn.addEventListener('click', async () => {
 
     // Step 2 — upload HTML directly from the browser to Vercel Blob (bypasses 4.5 MB function limit entirely)
     setPublishBtn('Uploading…', true);
+    const storeId = getStoreIdFromDelegationToken(presignedUrlPayload.delegationToken);
+    const requestId = `${storeId}:${Date.now()}:${Math.random().toString(16).slice(2)}`;
     const uploadRes = await fetch(buildPresignedUploadUrl(pathname, presignedUrlPayload), {
       method: 'PUT',
       headers: {
+        'x-api-blob-request-id': requestId,
         'x-api-version': '12',
         'x-content-type': 'text/html; charset=utf-8',
         'x-vercel-blob-access': 'public',
+        'x-vercel-blob-store-id': storeId,
         'x-vercel-blob-source': 'browser-upload',
       },
       body: html,

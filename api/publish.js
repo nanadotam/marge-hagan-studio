@@ -1,4 +1,5 @@
-const { handleUpload } = require('@vercel/blob/client');
+const { issueSignedToken } = require('@vercel/blob');
+const { handleUploadPresigned } = require('@vercel/blob/client');
 
 const DECK_PATH_RE = /^decks\/[a-z0-9][a-z0-9-]{0,62}\.html$/;
 
@@ -33,21 +34,30 @@ module.exports = async function handler(req, res) {
   catch (e) { return res.status(400).json({ error: e.message }); }
 
   try {
-    const response = await handleUpload({
+    const response = await handleUploadPresigned({
       body,
       request: req,
-      onBeforeGenerateToken: async (pathname) => {
+      getSignedToken: async (pathname) => {
         if (!DECK_PATH_RE.test(pathname)) {
           throw new Error('Invalid deck pathname');
         }
 
         return {
-          allowedContentTypes: ['text/html'],
-          maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — no deck will exceed this
-          addRandomSuffix: false,
-          allowOverwrite: true,
-          cacheControlMaxAge: 300,
-          callbackUrl: getCallbackUrl(req),
+          token: await issueSignedToken({
+            pathname,
+            operations: ['put'],
+            allowedContentTypes: ['text/html'],
+            maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — no deck will exceed this
+            validUntil: Date.now() + 60 * 60 * 1000,
+          }),
+          urlOptions: {
+            allowedContentTypes: ['text/html'],
+            maximumSizeInBytes: 200 * 1024 * 1024,
+            addRandomSuffix: false,
+            allowOverwrite: true,
+            cacheControlMaxAge: 300,
+            callbackUrl: getCallbackUrl(req),
+          },
         };
       },
       onUploadCompleted: async ({ blob }) => {

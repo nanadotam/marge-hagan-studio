@@ -283,12 +283,15 @@ function setPublishBtn(label, loading = false) {
   publishBtn.classList.toggle('loading', loading);
 }
 
-function getBlobStoreId(clientToken) {
-  const parts = clientToken.split('_');
-  if (parts.length < 5 || parts[0] !== 'vercel' || parts[1] !== 'blob' || parts[2] !== 'client') {
-    throw new Error('Invalid client upload token');
-  }
-  return parts[3];
+function buildPresignedUploadUrl(pathname, presignedUrlPayload) {
+  const params = new URLSearchParams({ pathname });
+  const url = new URL(`${BLOB_API_URL}/?${params.toString()}`);
+  Object.entries(presignedUrlPayload.params || {}).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  url.searchParams.set('vercel-blob-delegation', presignedUrlPayload.delegationToken);
+  url.searchParams.set('vercel-blob-signature', presignedUrlPayload.signature);
+  return url.toString();
 }
 
 publishBtn.addEventListener('click', async () => {
@@ -314,12 +317,12 @@ publishBtn.addEventListener('click', async () => {
   try {
     const pathname = `decks/${cleanSlug}.html`;
 
-    // Step 1 — get a short-lived client upload token from our server (tiny request, no body limit issue)
+    // Step 1 — get a short-lived presigned upload URL from our server (tiny request, no body limit issue)
     const tokenRes = await fetch('/api/publish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        type: 'blob.generate-client-token',
+        type: 'blob.generate-presigned-url',
         payload: { pathname, multipart: false, clientPayload: '' },
       }),
     });
@@ -328,21 +331,17 @@ publishBtn.addEventListener('click', async () => {
       const err = await tokenRes.json().catch(() => ({}));
       throw new Error(err.error || `Token error ${tokenRes.status}`);
     }
-    const { clientToken } = await tokenRes.json();
+    const { presignedUrlPayload } = await tokenRes.json();
+    if (!presignedUrlPayload) throw new Error('Missing upload URL');
 
     // Step 2 — upload HTML directly from the browser to Vercel Blob (bypasses 4.5 MB function limit entirely)
     setPublishBtn('Uploading…', true);
-    const params = new URLSearchParams({ pathname });
-    const storeId = getBlobStoreId(clientToken);
-    const uploadRes = await fetch(`${BLOB_API_URL}/?${params.toString()}`, {
+    const uploadRes = await fetch(buildPresignedUploadUrl(pathname, presignedUrlPayload), {
       method: 'PUT',
       headers: {
-        'Authorization': `Bearer ${clientToken}`,
-        'x-api-blob-request-id': `${storeId}:${Date.now()}:${Math.random().toString(16).slice(2)}`,
         'x-api-version': '12',
         'x-content-type': 'text/html; charset=utf-8',
         'x-vercel-blob-access': 'public',
-        'x-vercel-blob-store-id': storeId,
         'x-vercel-blob-source': 'browser-upload',
       },
       body: html,

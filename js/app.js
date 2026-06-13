@@ -5,9 +5,11 @@ const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf
 
 let imageUrls = [];
 
-// ASSET_LOGO and ASSET_HEADSHOT are loaded from js/assets.js
-const logoB64     = typeof ASSET_LOGO     !== 'undefined' ? ASSET_LOGO     : '';
-const headshotB64 = typeof ASSET_HEADSHOT !== 'undefined' ? ASSET_HEADSHOT : '';
+// Assets loaded from js/assets.js
+const logoB64       = typeof ASSET_LOGO           !== 'undefined' ? ASSET_LOGO           : '';
+const logoLightB64  = typeof ASSET_LOGO_LIGHT     !== 'undefined' ? ASSET_LOGO_LIGHT     : '';
+const headshotB64   = typeof ASSET_HEADSHOT       !== 'undefined' ? ASSET_HEADSHOT       : '';
+const fontBoldonse  = typeof ASSET_FONT_BOLDONSE  !== 'undefined' ? ASSET_FONT_BOLDONSE  : '';
 
 function blobToDataUrl(blob) {
   return new Promise((res, rej) => {
@@ -176,7 +178,7 @@ function refreshPreview() {
     imageUrls,
     titleIn.value, eyebrowIn.value, slug,
     clientIn.value, dateIn.value, eyebrowIn.value, noteIn.value,
-    logoB64, headshotB64
+    logoB64, logoLightB64, headshotB64, fontBoldonse
   );
   const blob = new Blob([html], { type: 'text/html' });
   const url  = URL.createObjectURL(blob);
@@ -197,7 +199,7 @@ exportBtn.addEventListener('click', () => {
     imageUrls,
     titleIn.value, eyebrowIn.value, slug,
     clientIn.value, dateIn.value, eyebrowIn.value, noteIn.value,
-    logoB64, headshotB64
+    logoB64, logoLightB64, headshotB64, fontBoldonse
   );
   const blob = new Blob([html], { type: 'text/html' });
   const a    = document.createElement('a');

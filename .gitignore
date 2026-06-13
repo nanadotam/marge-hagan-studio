@@ -2,3 +2,10 @@
 *.swp
 node_modules/
 .vercel/
+.vercel
+*.pdf
+*.zip
+*.textClipping
+*.py
+Screenshot*
+lady-marge-deck-viewer.html

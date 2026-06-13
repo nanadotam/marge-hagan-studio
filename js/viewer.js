@@ -13,9 +13,13 @@ function esc(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB64, headshotB64) {
+function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB64, logoLightB64, headshotB64, fontBoldonse) {
   const pages = imgs.length;
   const PORTFOLIO = 'https://margehagan.framer.website/?utm_source=ig&utm_medium=social&utm_content=link_in_bio';
+
+  const fontFace = fontBoldonse
+    ? `@font-face{font-family:'Boldonse';src:url('${fontBoldonse}') format('truetype');font-weight:normal;font-style:normal;font-display:swap;}`
+    : '';
 
   const imgsHTML = imgs.map((src, i) =>
     `<div class="page-wrap">
@@ -39,12 +43,13 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
     </div>
   </section>` : '';
 
-  const logoTag = logoB64
-    ? `<img class="t-logo" src="${logoB64}" alt="Lady-Marge" /><span class="t-div"></span>` : '';
-
-  const heroLogoTag = logoB64
-    ? `<div class="hero-logo"><img src="${logoB64}" alt="Lady-Marge" /></div>` : '';
-
+  // Both logo variants inlined so JS can switch them without re-embedding
+  const logoImgTag = (logoB64 || logoLightB64)
+    ? `<img id="t-logo-img" class="t-logo" src="${logoLightB64 || logoB64}" alt="Lady-Marge" /><span class="t-div"></span>`
+    : '';
+  const heroLogoTag = (logoB64 || logoLightB64)
+    ? `<div class="hero-logo"><img id="h-logo-img" src="${logoLightB64 || logoB64}" alt="Lady-Marge" /></div>`
+    : '';
   const headshotTag = headshotB64
     ? `<img class="f-photo" src="${headshotB64}" alt="Marge Hagan" />` : '';
 
@@ -57,6 +62,7 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
   <style>
+    ${fontFace}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     :root{--mag:#A71F5A;--mag-dark:#7d1644;--mag-pale:rgba(167,31,90,0.06);--mag-dim:rgba(167,31,90,0.14);}
     [data-theme="light"]{
@@ -64,7 +70,7 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
       --vbg:#F2E4EC;--bar:#fff;--bar-t:#1A0A12;--border:rgba(167,31,90,0.12);
     }
     [data-theme="dark"]{
-      --bg:#1A0010;--surface:#250018;--card:#1f0014;--body:#F5D7D7;
+      --bg:#1A0010;--surface:#220015;--card:#1f0014;--body:#F5D7D7;
       --sub:rgba(245,215,215,0.7);--vbg:#160010;--bar:#0d0008;--bar-t:#F5D7D7;
       --border:rgba(255,255,255,0.07);
     }
@@ -74,92 +80,87 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
     /* ── Topbar ── */
     .topbar{position:sticky;top:0;z-index:100;height:58px;background:var(--bar);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;box-shadow:0 1px 0 var(--border),0 4px 20px rgba(167,31,90,0.07);}
     .t-left{display:flex;align-items:center;gap:10px;text-decoration:none;}
-    .t-logo{height:30px;width:auto;}
+    .t-logo{height:36px;width:auto;}
     .t-div{width:1px;height:20px;background:var(--border);}
     .t-name{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--bar-t);}
     .t-right{display:flex;align-items:center;gap:6px;}
-
-    /* Shared button base */
     .btn{display:inline-flex;align-items:center;gap:6px;font-family:"Montserrat",sans-serif;font-size:11px;font-weight:600;padding:6px 13px;border-radius:20px;cursor:pointer;letter-spacing:.03em;text-decoration:none;transition:all .18s;white-space:nowrap;}
-    /* Ghost */
     .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--sub);}
     .btn-ghost:hover{border-color:var(--mag);color:var(--mag);background:var(--mag-pale);}
-    /* Icon-only ghost */
     .btn-icon{background:transparent;border:1px solid var(--border);color:var(--sub);padding:6px 9px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .18s;}
     .btn-icon:hover{border-color:var(--mag);color:var(--mag);background:var(--mag-pale);}
-    /* Solid */
     .btn-solid{background:var(--mag);border:1px solid var(--mag);color:#fff;}
     .btn-solid:hover{background:var(--mag-dark);border-color:var(--mag-dark);}
-
     .copied-toast{font-size:10px;font-weight:700;color:var(--mag);opacity:0;transition:opacity .25s;pointer-events:none;display:flex;align-items:center;gap:4px;}
     .copied-toast.on{opacity:1;}
 
     /* ── Hero ── */
     .hero{padding:56px 24px 44px;text-align:center;border-bottom:1px solid var(--border);}
-    .hero-eye{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--mag);margin-bottom:18px;}
+    .hero-eye{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--mag);margin-bottom:18px;font-family:"Montserrat",sans-serif;}
     .hero-logo{margin:0 auto 22px;}
-    .hero-logo img{height:62px;width:auto;}
-    .hero-title{font-size:clamp(24px,4vw,42px);font-weight:700;color:var(--body);line-height:1.1;margin-bottom:10px;}
-    .hero-sub{font-size:12px;color:var(--sub);font-weight:500;}
+    .hero-logo img{height:72px;width:auto;}
+    .hero-title{font-size:clamp(28px,5vw,52px);color:var(--body);line-height:1.08;margin-bottom:12px;font-family:${fontBoldonse ? "'Boldonse'" : '"Montserrat"'},sans-serif;font-weight:${fontBoldonse ? 'normal' : '700'};}
+    .hero-sub{font-size:12px;color:var(--sub);font-weight:500;font-family:"Montserrat",sans-serif;}
 
     /* ── Brief strip ── */
     .brief-strip{background:var(--surface);border-bottom:3px solid var(--mag);}
     .brief-inner{max-width:960px;margin:0 auto;padding:40px 28px;display:grid;grid-template-columns:1fr auto;gap:20px 48px;align-items:start;}
     @media(max-width:640px){.brief-inner{grid-template-columns:1fr;}}
-    .brief-for{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--mag);margin-bottom:8px;}
-    .brief-client{font-size:clamp(28px,4vw,44px);font-weight:700;color:var(--body);line-height:1.05;}
+    .brief-for{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--mag);margin-bottom:8px;font-family:"Montserrat",sans-serif;}
+    .brief-client{font-size:clamp(28px,4vw,44px);color:var(--body);line-height:1.05;font-family:"Montserrat",sans-serif;font-weight:700;}
     .brief-meta{display:flex;flex-direction:column;gap:8px;text-align:right;}
     @media(max-width:640px){.brief-meta{text-align:left;}}
-    .brief-date{font-size:13px;font-weight:700;color:var(--body);}
-    .brief-pres{font-size:11px;font-weight:500;color:var(--sub);letter-spacing:.04em;}
-    .brief-note{grid-column:1/-1;font-size:12px;color:var(--sub);font-style:italic;border-top:1px solid var(--border);padding-top:16px;margin-top:4px;}
+    .brief-date{font-size:13px;font-weight:700;color:var(--body);font-family:"Montserrat",sans-serif;}
+    .brief-pres{font-size:11px;font-weight:500;color:var(--sub);letter-spacing:.04em;font-family:"Montserrat",sans-serif;}
+    .brief-note{grid-column:1/-1;font-size:12px;color:var(--sub);font-style:italic;border-top:1px solid var(--border);padding-top:16px;margin-top:4px;font-family:"Montserrat",sans-serif;}
 
     /* ── Deck ── */
-    .shell{max-width:960px;margin:0 auto;padding:40px 20px 80px;}
+    .shell{max-width:960px;margin:0 auto;padding:44px 20px 88px;}
     .card{background:var(--card);border-radius:16px;box-shadow:0 1px 0 rgba(167,31,90,0.12),0 12px 48px rgba(167,31,90,0.07);overflow:hidden;}
     .card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:var(--surface);border-bottom:1px solid var(--border);}
-    .card-lbl{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--mag);}
-    .card-pages{font-size:11px;color:var(--sub);font-weight:500;}
-    .deck-view{width:100%;background:var(--vbg);display:flex;flex-direction:column;align-items:center;gap:24px;padding:32px 24px 40px;scroll-behavior:smooth;}
+    .card-lbl{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--mag);font-family:"Montserrat",sans-serif;}
+    .card-pages{font-size:11px;color:var(--sub);font-weight:500;font-family:"Montserrat",sans-serif;}
+    .deck-view{width:100%;background:var(--vbg);display:flex;flex-direction:column;align-items:center;gap:24px;padding:32px 24px 40px;}
     .page-wrap{position:relative;width:100%;max-width:860px;}
     .page-wrap img{width:100%;height:auto;display:block;border-radius:10px;box-shadow:0 4px 32px rgba(0,0,0,0.1),0 1px 4px rgba(0,0,0,0.05);}
-    .page-num{position:absolute;top:14px;right:14px;font-size:9px;font-weight:700;letter-spacing:.1em;background:rgba(0,0,0,0.32);color:#fff;padding:3px 9px;border-radius:12px;backdrop-filter:blur(6px);}
+    .page-num{position:absolute;top:14px;right:14px;font-size:9px;font-weight:700;letter-spacing:.1em;background:rgba(0,0,0,0.32);color:#fff;padding:3px 9px;border-radius:12px;backdrop-filter:blur(6px);font-family:"Montserrat",sans-serif;}
 
     /* ── Footer ── */
     .footer{background:var(--mag);color:#F5D7D7;overflow:hidden;position:relative;}
     .f-top{max-width:920px;margin:0 auto;padding:60px 28px 48px;display:grid;grid-template-columns:1fr 1fr;gap:40px 60px;}
     @media(max-width:600px){.f-top{grid-template-columns:1fr;gap:32px;padding:48px 24px 36px;}}
-    .f-lbl{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#e8b4c8;margin-bottom:12px;display:block;}
-    .f-contact p{font-size:13px;color:#F5D7D7;margin-bottom:4px;font-weight:600;}
-    .f-contact a{color:#F5D7D7;text-decoration:none;font-size:12px;display:block;margin-bottom:4px;opacity:.85;font-weight:500;}
+    .f-lbl{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#e8b4c8;margin-bottom:12px;display:block;font-family:"Montserrat",sans-serif;}
+    .f-contact p{font-size:13px;color:#F5D7D7;margin-bottom:4px;font-weight:600;font-family:"Montserrat",sans-serif;}
+    .f-contact a{color:#F5D7D7;text-decoration:none;font-size:12px;display:block;margin-bottom:4px;opacity:.85;font-weight:500;font-family:"Montserrat",sans-serif;}
     .f-contact a:hover{opacity:1;text-decoration:underline;}
     .f-socials{display:flex;flex-direction:column;gap:8px;}
-    .s-link{display:flex;align-items:center;gap:10px;color:#F5D7D7;text-decoration:none;font-size:12px;opacity:.85;font-weight:500;transition:opacity .15s;}
+    .s-link{display:flex;align-items:center;gap:10px;color:#F5D7D7;text-decoration:none;font-size:12px;opacity:.85;font-weight:500;transition:opacity .15s;font-family:"Montserrat",sans-serif;}
     .s-link:hover{opacity:1;}
     .s-dot{width:5px;height:5px;border-radius:50%;background:#e8b4c8;flex-shrink:0;}
     /* Hero footer band */
-    .f-bottom{position:relative;min-height:600px;overflow:hidden;border-top:1px solid rgba(255,255,255,0.1);}
+    .f-bottom{position:relative;min-height:640px;overflow:hidden;border-top:1px solid rgba(255,255,255,0.1);}
     .f-content{position:relative;z-index:2;padding:56px 28px 56px;max-width:52%;min-width:300px;}
     @media(max-width:700px){.f-content{max-width:100%;}}
-    .f-big-head{font-size:clamp(38px,6vw,70px);font-weight:900;line-height:1.0;color:#F5D7D7;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:20px;}
+    .f-big-head{font-size:clamp(38px,6vw,70px);line-height:1.0;color:#F5D7D7;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:20px;font-family:${fontBoldonse ? "'Boldonse'" : '"Montserrat"'},sans-serif;font-weight:${fontBoldonse ? 'normal' : '900'};}
     .f-big-head em{color:#fff;font-style:normal;}
-    .f-subtitle{font-size:14px;color:rgba(245,215,215,.82);font-weight:500;line-height:1.6;max-width:380px;margin-bottom:32px;}
+    .f-subtitle{font-size:14px;color:rgba(245,215,215,.82);font-weight:500;line-height:1.6;max-width:380px;margin-bottom:32px;font-family:"Montserrat",sans-serif;}
     .f-links{display:flex;flex-direction:column;gap:11px;border-left:3px solid rgba(245,215,215,.25);padding-left:18px;margin-bottom:36px;}
     .f-link{display:flex;align-items:baseline;gap:14px;font-size:13px;}
-    .f-link-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(245,215,215,.45);flex-shrink:0;min-width:80px;}
-    .f-link a{color:#F5D7D7;text-decoration:none;font-weight:500;opacity:.9;transition:opacity .15s;}
+    .f-link-label{font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(245,215,215,.45);flex-shrink:0;min-width:80px;font-family:"Montserrat",sans-serif;}
+    .f-link a{color:#F5D7D7;text-decoration:none;font-weight:500;opacity:.9;transition:opacity .15s;font-family:"Montserrat",sans-serif;}
     .f-link a:hover{opacity:1;text-decoration:underline;}
-    .f-legal{font-size:10px;font-weight:600;color:rgba(255,255,255,.25);letter-spacing:.06em;}
-    .f-photo-wrap{position:absolute;right:0;bottom:0;width:55%;max-width:620px;z-index:1;line-height:0;pointer-events:none;}
-    .f-photo{width:100%;height:auto;display:block;object-fit:cover;object-position:top center;}
-    @media(max-width:700px){.f-photo-wrap{position:static;width:100%;max-width:100%;}}
+    .f-legal{font-size:10px;font-weight:600;color:rgba(255,255,255,.25);letter-spacing:.06em;font-family:"Montserrat",sans-serif;}
+    /* Photo — anchored top so her hair is never cropped */
+    .f-photo-wrap{position:absolute;right:0;top:0;bottom:0;width:52%;max-width:600px;z-index:1;pointer-events:none;}
+    .f-photo{width:100%;height:100%;display:block;object-fit:cover;object-position:top center;}
+    @media(max-width:700px){.f-photo-wrap{position:static;width:100%;max-width:100%;height:480px;}}
   </style>
 </head>
 <body>
 
   <header class="topbar">
     <a class="t-left" href="${PORTFOLIO}" target="_blank" rel="noopener">
-      ${logoTag}
+      ${logoImgTag}
       <span class="t-name">Lady-Marge</span>
     </a>
     <nav class="t-right">
@@ -230,17 +231,28 @@ ${briefSection}
 
   <script>
     (function() {
+      const html     = document.documentElement;
       const themeBtn = document.getElementById("theme-btn");
       const copyBtn  = document.getElementById("copy-btn");
       const copied   = document.getElementById("copied");
+      const tLogo    = document.getElementById("t-logo-img");
+      const hLogo    = document.getElementById("h-logo-img");
+
+      const LOGO_LIGHT = "${logoLightB64 || logoB64}";
+      const LOGO_DARK  = "${logoB64 || logoLightB64}";
       const MOON = \`${PH.moon}\`;
       const SUN  = \`${PH.sun}\`;
 
+      function applyTheme(dark) {
+        html.dataset.theme = dark ? "dark" : "light";
+        themeBtn.innerHTML = dark ? SUN : MOON;
+        const src = dark ? LOGO_DARK : LOGO_LIGHT;
+        if (tLogo) tLogo.src = src;
+        if (hLogo) hLogo.src = src;
+      }
+
       themeBtn.addEventListener("click", () => {
-        const h = document.documentElement;
-        const isDark = h.dataset.theme === "dark";
-        h.dataset.theme = isDark ? "light" : "dark";
-        themeBtn.innerHTML = isDark ? MOON : SUN;
+        applyTheme(html.dataset.theme !== "dark");
       });
 
       copyBtn.addEventListener("click", () => {

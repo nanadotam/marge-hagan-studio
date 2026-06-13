@@ -10,7 +10,11 @@ const PH = {
 };
 
 function esc(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function jsString(s) {
+  return JSON.stringify(String(s || ''));
 }
 
 function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB64, logoLightB64, headshotB64, fontBoldonse) {
@@ -24,7 +28,7 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
   const imgsHTML = imgs.map((src, i) =>
     `<div class="page-wrap">
         <span class="page-num">${i + 1} / ${pages}</span>
-        <img src="${src}" alt="${esc(title)} — page ${i + 1}" loading="lazy" />
+        <img src="${esc(src)}" alt="${esc(title)} — page ${i + 1}" loading="lazy" />
       </div>`
   ).join('\n      ');
 
@@ -45,13 +49,13 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
 
   // Both logo variants inlined so JS can switch them without re-embedding
   const logoImgTag = (logoB64 || logoLightB64)
-    ? `<img id="t-logo-img" class="t-logo" src="${logoLightB64 || logoB64}" alt="Lady-Marge" /><span class="t-div"></span>`
+    ? `<img id="t-logo-img" class="t-logo" src="${esc(logoLightB64 || logoB64)}" alt="Lady-Marge" /><span class="t-div"></span>`
     : '';
   const heroLogoTag = (logoB64 || logoLightB64)
-    ? `<div class="hero-logo"><img id="h-logo-img" src="${logoLightB64 || logoB64}" alt="Lady-Marge" /></div>`
+    ? `<div class="hero-logo"><img id="h-logo-img" src="${esc(logoLightB64 || logoB64)}" alt="Lady-Marge" /></div>`
     : '';
   const headshotTag = headshotB64
-    ? `<img class="f-photo" src="${headshotB64}" alt="Marge Hagan" />` : '';
+    ? `<img class="f-photo" src="${esc(headshotB64)}" alt="Marge Hagan" />` : '';
 
   return `<!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -238,10 +242,10 @@ ${briefSection}
       const tLogo    = document.getElementById("t-logo-img");
       const hLogo    = document.getElementById("h-logo-img");
 
-      const LOGO_LIGHT = "${logoLightB64 || logoB64}";
-      const LOGO_DARK  = "${logoB64 || logoLightB64}";
-      const MOON = \`${PH.moon}\`;
-      const SUN  = \`${PH.sun}\`;
+      const LOGO_LIGHT = ${jsString(logoLightB64 || logoB64)};
+      const LOGO_DARK  = ${jsString(logoB64 || logoLightB64)};
+      const MOON = ${jsString(PH.moon)};
+      const SUN  = ${jsString(PH.sun)};
 
       function applyTheme(dark) {
         html.dataset.theme = dark ? "dark" : "light";

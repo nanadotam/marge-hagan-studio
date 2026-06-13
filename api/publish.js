@@ -1,4 +1,14 @@
-const { handleUpload } = require('@vercel/blob');
+const { handleUpload } = require('@vercel/blob/client');
+
+const DECK_PATH_RE = /^decks\/[a-z0-9][a-z0-9-]{0,62}\.html$/;
+
+function getCallbackUrl(req) {
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  if (!host) return undefined;
+
+  const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+  return `${proto}://${host}/api/publish`;
+}
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -26,12 +36,20 @@ module.exports = async function handler(req, res) {
     const response = await handleUpload({
       body,
       request: req,
-      onBeforeGenerateToken: async (pathname) => ({
-        allowedContentTypes: ['text/html'],
-        maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — no deck will exceed this
-        addRandomSuffix: false,
-        cacheControlMaxAge: 300,
-      }),
+      onBeforeGenerateToken: async (pathname) => {
+        if (!DECK_PATH_RE.test(pathname)) {
+          throw new Error('Invalid deck pathname');
+        }
+
+        return {
+          allowedContentTypes: ['text/html'],
+          maximumSizeInBytes: 200 * 1024 * 1024, // 200 MB — no deck will exceed this
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          cacheControlMaxAge: 300,
+          callbackUrl: getCallbackUrl(req),
+        };
+      },
       onUploadCompleted: async ({ blob }) => {
         console.log('Deck live:', blob.url);
       },

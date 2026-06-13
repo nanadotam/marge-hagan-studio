@@ -2,6 +2,7 @@
 
 const PDFJS_CDN    = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const BLOB_API_URL = 'https://vercel.com/api/blob';
 
 let imageUrls = [];
 
@@ -60,18 +61,28 @@ function sanitizeSlug(raw) {
     .replace(/^-+|-+$/g, '');       // strip leading/trailing hyphens
 }
 
+function hasValidSlug() {
+  return Boolean(sanitizeSlug(slugVal.value));
+}
+
+function updateActionButtons() {
+  exportBtn.disabled = !imageUrls.length;
+  publishBtn.disabled = !imageUrls.length || !hasValidSlug();
+}
+
 function setSlug(value) {
-  slug = value;
+  slug = sanitizeSlug(value);
   slugVal.value = value;
   updateSlugHint();
+  updateActionButtons();
   if (imageUrls.length) refreshPreview();
 }
 
 function updateSlugHint() {
   const s = slugVal.value.trim();
   if (!s) {
-    slugHint.textContent = '';
-    slugHint.className = 'slug-hint';
+    slugHint.textContent = 'Enter a slug before publishing.';
+    slugHint.className = 'slug-hint error';
     return;
   }
   const clean = sanitizeSlug(s);
@@ -90,8 +101,9 @@ updateSlugHint();
 
 // User types a custom slug
 slugVal.addEventListener('input', () => {
-  slug = sanitizeSlug(slugVal.value) || slug;
+  slug = sanitizeSlug(slugVal.value);
   updateSlugHint();
+  updateActionButtons();
   if (imageUrls.length) refreshPreview();
 });
 
@@ -99,6 +111,7 @@ slugVal.addEventListener('input', () => {
 slugVal.addEventListener('blur', () => {
   const clean = sanitizeSlug(slugVal.value);
   if (clean) setSlug(clean);
+  else updateActionButtons();
 });
 
 // Random regen
@@ -126,14 +139,14 @@ function showError(msg) {
   fname.textContent = msg;
   dropZone.classList.remove('has-file');
   pdfProg.classList.remove('on');
-  exportBtn.disabled = true; publishBtn.disabled = true;
+  updateActionButtons();
 }
 
 async function handleFile(file) {
   fname.textContent = file.name;
   dropZone.classList.add('has-file');
   imageUrls = [];
-  exportBtn.disabled = true; publishBtn.disabled = true;
+  updateActionButtons();
 
   try {
     if (file.type === 'application/pdf') {
@@ -146,7 +159,7 @@ async function handleFile(file) {
       progFill.style.width = '100%';
       pdfProg.classList.remove('on');
       refreshPreview();
-      exportBtn.disabled = false; publishBtn.disabled = false;
+      updateActionButtons();
     } else {
       showError('Unsupported format — use PNG, JPG, or PDF');
     }
@@ -217,7 +230,7 @@ async function renderPDF(file) {
 
   imageUrls = urls;
   refreshPreview();
-  exportBtn.disabled = false;
+  updateActionButtons();
 }
 
 // ── Preview ───────────────────────────────────────────────────────────────────
@@ -270,12 +283,27 @@ function setPublishBtn(label, loading = false) {
   publishBtn.classList.toggle('loading', loading);
 }
 
+function getBlobStoreId(clientToken) {
+  const parts = clientToken.split('_');
+  if (parts.length < 5 || parts[0] !== 'vercel' || parts[1] !== 'blob' || parts[2] !== 'client') {
+    throw new Error('Invalid client upload token');
+  }
+  return parts[3];
+}
+
 publishBtn.addEventListener('click', async () => {
   if (!imageUrls.length) return;
+  const cleanSlug = sanitizeSlug(slugVal.value);
+  if (!cleanSlug) {
+    updateSlugHint();
+    updateActionButtons();
+    return;
+  }
+  if (cleanSlug !== slugVal.value.trim()) setSlug(cleanSlug);
 
   const html = buildViewer(
     imageUrls,
-    titleIn.value, eyebrowIn.value, slug,
+    titleIn.value, eyebrowIn.value, cleanSlug,
     clientIn.value, dateIn.value, eyebrowIn.value, noteIn.value,
     logoB64, logoLightB64, headshotB64, fontBoldonse
   );
@@ -284,8 +312,7 @@ publishBtn.addEventListener('click', async () => {
   pubResult.style.display = 'none';
 
   try {
-    const pathname    = `decks/${slug}.html`;
-    const callbackUrl = `${window.location.origin}/api/publish`;
+    const pathname = `decks/${cleanSlug}.html`;
 
     // Step 1 — get a short-lived client upload token from our server (tiny request, no body limit issue)
     const tokenRes = await fetch('/api/publish', {
@@ -293,7 +320,7 @@ publishBtn.addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         type: 'blob.generate-client-token',
-        payload: { pathname, callbackUrl, multipart: false, clientPayload: '' },
+        payload: { pathname, multipart: false, clientPayload: '' },
       }),
     });
 
@@ -305,11 +332,17 @@ publishBtn.addEventListener('click', async () => {
 
     // Step 2 — upload HTML directly from the browser to Vercel Blob (bypasses 4.5 MB function limit entirely)
     setPublishBtn('Uploading…', true);
-    const uploadRes = await fetch(`https://blob.vercel-storage.com/${pathname}`, {
+    const params = new URLSearchParams({ pathname });
+    const storeId = getBlobStoreId(clientToken);
+    const uploadRes = await fetch(`${BLOB_API_URL}/?${params.toString()}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${clientToken}`,
-        'Content-Type': 'text/html; charset=utf-8',
+        'x-api-blob-request-id': `${storeId}:${Date.now()}:${Math.random().toString(16).slice(2)}`,
+        'x-api-version': '12',
+        'x-content-type': 'text/html; charset=utf-8',
+        'x-vercel-blob-access': 'public',
+        'x-vercel-blob-store-id': storeId,
         'x-vercel-blob-source': 'browser-upload',
       },
       body: html,
@@ -320,7 +353,7 @@ publishBtn.addEventListener('click', async () => {
       throw new Error(`Upload failed (${uploadRes.status}): ${txt.slice(0, 200)}`);
     }
 
-    const deckUrl = `${window.location.origin}/deck/${slug}`;
+    const deckUrl = `${window.location.origin}/deck/${cleanSlug}`;
 
     pubResultUrl.href        = deckUrl;
     pubResultUrl.textContent = deckUrl.replace(/^https?:\/\//, '');

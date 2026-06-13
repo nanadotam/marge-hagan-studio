@@ -162,7 +162,7 @@ function buildViewer(imgs, title, eyebrow, slug, client, date, pres, note, logoB
 </head>
 <body>
 
-  <header class="topbar">
+  <header class="topbar" style="padding:0 16px;">
     <a class="t-left" href="${PORTFOLIO}" target="_blank" rel="noopener">
       ${logoImgTag}
       <span class="t-name">Lady-Marge</span>

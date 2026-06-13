@@ -356,7 +356,7 @@ publishBtn.addEventListener('click', async () => {
       headers: {
         'x-api-blob-request-id': requestId,
         'x-api-version': '12',
-        'x-content-type': 'text/html; charset=utf-8',
+        'x-content-type': 'text/html',
         'x-vercel-blob-access': 'public',
         'x-vercel-blob-store-id': storeId,
         'x-vercel-blob-source': 'browser-upload',
